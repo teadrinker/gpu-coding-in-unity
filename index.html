@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+<div class="reveal">
+<div class="slides">
+
+
+
+
+
+<section data-markdown>
+## gpu-coding-in-unity
+
+</section>
+
+
+<section>
+Start
+<pre><code class="hljs" data-trim contenteditable>
+{ 
+  meshFilter.mesh = CreateQuadMesh(
+    4.5f,  // car should be around 4 meters
+    0.1914063f, 0.08691406f, // the size of each sprite
+    Random.Range(0,5), Random.Range(0,10) // randomize car sprite
+  );
+  
+  // randomize depth value
+  currentPosZ = Random.value * depth; 
+  // initialize the speed for this car
+  currentSpeed = speed * (1.0f - speedVariation * Random.value); 
+  // initialize position for this car
+  currentPosX = (Random.value - 0.5f) * width; 
+}
+</code></pre></section>
+
+<section>
+Update
+<pre><code class="hljs" data-trim contenteditable>
+{ 
+  currentPosX += currentSpeed * Time.deltaTime;
+  if(currentPosX > width/2) {
+  	currentPosX = -width/2;
+  }
+  
+  transform.localPosition = new Vector3(currentPosX, 0.0f, currentPosZ);
+}
+</code></pre></section>
+
+
+
+<section> <img class="stretch" style="border:0" src="resource_credits.jpg"/></section>
+
+<section data-markdown data-background="screenshot.jpg"></section>
+
+
+</div>
+</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
