@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>GPU Coding In Unity</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
 		<link rel="stylesheet" href="css/theme/black.css">
@@ -30,15 +30,18 @@
 
 
 <section data-markdown>
-## gpu-coding-in-unity
+## GPU Coding
+In Unity
 
 </section>
 
+<section> <img class="stretch" style="border:0" src="cpucase.png"/></section>
+
 
 <section>
-Start
-<pre><code class="hljs" data-trim contenteditable>
-{ 
+animatedCarCPU Start()
+<pre><code data-noescape class="cs" >
+
   meshFilter.mesh = CreateQuadMesh(
     4.5f,  // car should be around 4 meters
     0.1914063f, 0.08691406f, // the size of each sprite
@@ -51,27 +54,169 @@ Start
   currentSpeed = speed * (1.0f - speedVariation * Random.value); 
   // initialize position for this car
   currentPosX = (Random.value - 0.5f) * width; 
-}
+
 </code></pre></section>
 
 <section>
-Update
-<pre><code class="hljs" data-trim contenteditable>
-{ 
+animatedCarCPU Update()
+<pre><code data-noescape class="cs" >
+
   currentPosX += currentSpeed * Time.deltaTime;
   if(currentPosX > width/2) {
   	currentPosX = -width/2;
   }
   
   transform.localPosition = new Vector3(currentPosX, 0.0f, currentPosZ);
-}
+
+</code></pre></section>
+
+<section data-background-video="cputest.mp4"></section>
+
+<section data-markdown> #GPU Time! </section>
+
+<section> <img class="stretch" style="border:0" src="shaders.png"/></section>
+
+<section> <pre><code data-noescape class="glsl" >
+  Properties {
+    _MyVariable  ("My Variable", Range(1,10)) = 4
+  }
+
+  float _MyVariable;  // accessible from the material gui
+  
+  v2f vert (appdata v) 
+  {
+    // do this per vertex
+  }
+  
+  fixed4 frag (v2f i)
+  {
+    // do this per pixel
+  }
+</code></pre></section>
+
+
+<section>
+Approach<br>
+<br>
+We want the cars to be able to animate in parallel,<br>
+<b>so they all need to be in the same draw call</b><br>
+<br>
+In order to get any shader calls at all,<br>
+<b>we need to feed it with a mesh...</b> <br>
+</section>
+
+
+<section> Basemesh <br><img class="stretch" style="border:0" src="basemesh.png"/></section>
+
+<section>
+Some problems:<br><br>
+<ul>
+<li style="font-size: 70%">We don't have a "object callback", our shader code runs per vertex
+   <p class="fragment fade-up" style="color:#7f7">- <b>Use vertex shader, just redo the same work for each vertex</b></p></li>
+<li style="font-size: 70%">When processing a vertex, we don't know which object/quad we are processing
+   <p class="fragment fade-up" style="color:#7f7">- <b>Use z-value</b></p></li>
+<li style="font-size: 70%">There is no random function on GPU</p>
+   <p class="fragment fade-up" style="color:#7f7">- <b>Use hash funtion</b></p></li>
+<li style="font-size: 70%">You cannot write to variables in the code (just output vertex or color data)
+   <p class="fragment fade-up" style="color:#7f7">- <b>Rewrite the code without state</b></p></li>
+</ul>
+</section>
+
+<section>Lets focus on currentPosX!<pre><code data-noescape class="cs" >
+
+  // init
+  currentPosX = (Random.value - 0.5f) * width; 
+
+  // update
+  currentPosX += speed * Time.deltaTime;
+  if(currentPosX > width/2) { // wrap around
+  	currentPosX = -width/2;
+  }
+  
+</code></pre></section>
+
+<section>Ignore the wrapping a while...<pre><code data-noescape class="cs" >
+
+  // init
+  currentPosX = (Random.value - 0.5f) * width; 
+
+  // update
+  currentPosX += speed * Time.deltaTime;
+
+
+
 </code></pre></section>
 
 
 
-<section> <img class="stretch" style="border:0" src="resource_credits.jpg"/></section>
+
+<section>Can be rewritten as<pre><code data-noescape class="cs" >
+
+  // no init needed
+
+
+  // update
+  float initialPosX = (floatHash(uniqeValueForThisCar) - 0.5f) * width;
+  float posX = initialPosX + speed * timeInSeconds;
+
+
+
+</code></pre></section>
+
+
+
+
+<section>And add the wrap around...<pre><code data-noescape class="cs" >
+
+  // no init needed
+
+
+  // update
+  float initialPosX = (floatHash(uniqeValueForThisCar) - 0.5f) * width;
+  float posX = initialPosX + speed * timeInSeconds;
+  posX = (posX + width/2.0f) % width - width/2.0f; // wrap around
+
+
+</code></pre></section>
+
+
+
+
+<section> <img class="stretch" style="border:0" src="resource_credits.jpg"/><a href="http://www.retrojdm.com/PixelCars.asp">www.retrojdm.com/PixelCars.asp</a></section>
 
 <section data-markdown data-background="screenshot.jpg"></section>
+
+<section data-markdown> Setting up a new unity project for Gear VR </section>
+
+<section> <img class="stretch" style="border:0" src="gear01.png"/></section>
+<section> <img class="stretch" style="border:0" src="gear02.png"/></section>
+<section> <img class="stretch" style="border:0" src="gear03.png"/></section>
+<section> <img class="stretch" style="border:0" src="gear04.png"/></section>
+<section> <img class="stretch" style="border:0" src="gear05.png"/></section>
+
+<section data-markdown> 
+**Anti-aliasing**
+
+Try increasing Anti Aliasing in Project Settings/Quality.
+
+</section>
+
+<!--section data-markdown>
+**Texture look-up bias**
+
+instead of
+
+    tex2D(_MainTex, i.uv)
+
+you can use
+
+    tex2Dbias(_MainTex, float4(uv.x, uv.y, 0.0f, bias))
+
+where bias is a negative value, bias -1 means it will shift
+mipmap picking a whole step (which is usually too much).
+
+Be very careful in adjusting mipmap bias, it is easy to introduce alias
+</section-->
 
 
 </div>
