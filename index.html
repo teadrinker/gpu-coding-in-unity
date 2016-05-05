@@ -33,6 +33,10 @@
 ## GPU Coding
 In Unity
 
+[teadrinker.github.io/gpu-coding-in-unity](http://teadrinker.github.io/gpu-coding-in-unity)
+
+[click here to download unity project zip](http://teadrinker.github.io/gpu-coding-in-unity/_unity-project/gpu-coding-in-unity.zip)
+
 </section>
 
 <section> <img class="stretch" style="border:0" src="cpucase.png"/></section>
@@ -103,6 +107,8 @@ We want the cars to be able to animate in parallel,<br>
 <br>
 In order to get any shader calls at all,<br>
 <b>we need to feed it with a mesh...</b> <br>
+<br>
+"What does 1000 un-animated objects look"<br>
 </section>
 
 
@@ -116,7 +122,7 @@ Some problems:<br><br>
 <li style="font-size: 70%">When processing a vertex, we don't know which object/quad we are processing
    <p class="fragment fade-up" style="color:#7f7">- <b>Use z-value</b></p></li>
 <li style="font-size: 70%">There is no random function on GPU</p>
-   <p class="fragment fade-up" style="color:#7f7">- <b>Use hash funtion</b></p></li>
+   <p class="fragment fade-up" style="color:#7f7">- <b>Use hash funtion + a unique value per object</b></p></li>
 <li style="font-size: 70%">You cannot write to variables in the code (just output vertex or color data)
    <p class="fragment fade-up" style="color:#7f7">- <b>Rewrite the code without state</b></p></li>
 </ul>
@@ -179,6 +185,39 @@ Some problems:<br><br>
 
 </code></pre></section>
 
+<section><pre><code style="font-size: 90%;line-height: 100%" data-noescape class="cs" >v2f vert (appdata v) // unity vertex shader
+{
+  v2f o;
+  
+  float4 pos = v.vertex; 
+  float uniqeValueForThisCar = pos.z;
+  float timeInSeconds = _Time[1];
+
+  pos.z *= _depth; // don't randomize depth, this will ensure they are drawn back to front
+   
+  float speed = _speed * (1.0 - _speedVariation * floatHash(uniqeValueForThisCar+1.0));
+  
+  float initialPosX = (floatHash(uniqeValueForThisCar) - 0.5f) * _width;
+  float posX = initialPosX + speed * timeInSeconds;
+  posX = (posX + _width/2.0f) % _width - _width/2.0f; // wrap around
+  
+  pos.x += posX; // offset quadvertex by car position
+
+  o.vertex = mul(UNITY_MATRIX_MVP, pos);
+
+  return o;
+}   
+</code></pre></section>
+
+
+
+
+
+
+<section><img class="stretch" style="border:0" src="mathpos1.png"/></section>
+
+
+<section><img class="stretch" style="border:0" src="mathpos2.png"/></section>
 
 
 
